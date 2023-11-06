@@ -19,10 +19,10 @@ class HeadHunter(Engine):
 
     def __init__(self, keyword):
         self.params = {
-            "count": 20,
-            "per_page": None,
-            "keyword": keyword,
-            "archive": False
+            # "count": 1,
+            # "per_page": None,
+            # "name": keyword,
+            # "archive": False
         }
         self.vacancies = []
 
@@ -30,6 +30,7 @@ class HeadHunter(Engine):
         response = requests.get(f'{self.url}/vacancies', params=self.params)
         if response.status_code != 200:
             raise ParsingError(f"Ошибка получения вакансий! Статус: {response.status_code}")
+        print(response.json())
         return response.json()
 
 
@@ -41,16 +42,19 @@ class HeadHunter(Engine):
             print(f"({self.__class__.__name__}) Парсинг страницы {page} -", end=" ")
             try:
                 page_vacancies = self.get_request()
+                # print(self.get_request())
+                # print(len(self.vacancies)('items'))
             except ParsingError as error:
                 print(error)
             else:
-                # print(json.dumps(page_vacancies, indent=2, ensure_ascii=False))
-                self.vacancies.extend(page_vacancies)
+                # print(page_vacancies['items'])
+                # print(json.dumps(page_vacancies['items'], indent=2, ensure_ascii=False))
+                self.vacancies.extend(page_vacancies['items'])
                 # print(json.dumps(self.vacancies, indent=2, ensure_ascii=False))
-                print(f"Загружено вакансий {len(page_vacancies)}")
-                print(len(self.vacancies))
-                print(self.vacancies)
-                print(json.dumps(self.vacancies, indent=2, ensure_ascii=False))
+                print(f"Загружено вакансий {len(page_vacancies['items'])}")
+                # print(len(self.vacancies))
+                # print(self.vacancies)
+                # print(json.dumps(self.vacancies, indent=2, ensure_ascii=False))
                 # print(page_vacancies)
             if len(page_vacancies) == 0:
                 break
@@ -58,15 +62,15 @@ class HeadHunter(Engine):
     def get_formatted_vacancies(self):
         formatted_vacancies = []
         for vacancy in self.vacancies:
-            print(self.vacancies)
-            print(json.dumps(vacancy, indent=2, ensure_ascii=False))
-            print(f"New")
+            # print(vacancy)
+            # print(json.dumps(vacancy, indent=2, ensure_ascii=False))
+            # print(f"New")
             formatted_vacancy = {
                 "ist": "hh.ru",
-                # "employer": vacancy['items'][0]['department'],
-                # "title": vacancy['items'][0]['name'],
-                # "payment_from": vacancy['items'][0]['salary']['from'],
-                # "payment_to": vacancy['items'][0]['salary']['to'],
+                "employer": vacancy['department'],
+                "title": vacancy['name'],
+                "payment_from": vacancy['salary']['from'],
+                "payment_to": vacancy['salary']['to'],
             }
             formatted_vacancies.append(formatted_vacancy)
         return formatted_vacancies
