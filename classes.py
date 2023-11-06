@@ -50,7 +50,7 @@ class HeadHunter(Engine):
                 print(f"Загружено вакансий {len(page_vacancies)}")
                 print(len(self.vacancies))
                 print(self.vacancies)
-                # print(json.dumps(self.vacancies, indent=2, ensure_ascii=False))
+                print(json.dumps(self.vacancies, indent=2, ensure_ascii=False))
                 # print(page_vacancies)
             if len(page_vacancies) == 0:
                 break
