@@ -14,7 +14,7 @@ if __name__ == '__main__':
     connector.insert(vacancies_json)
 
     hh = HeadHunter(keyword)
-    hh.get_vacancies(pages_count=2)
+    hh.get_vacancies(pages_count=1)
     vacancies_json.extend(hh.get_formatted_vacancies())
 
     connector = Connector(keyword=keyword)
