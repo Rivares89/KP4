@@ -149,6 +149,24 @@ class Vacancy:
         self.title = vacancy.title
         self.payment_from = vacancy.payment_from
         self.payment_to = vacancy.payment_to
+        self.responsibility = vacancy.responsibility
+        self.link = vacancy.link
+        self.date = vacancy.date
+
+    def __gt__(self, other):
+        return self.payment_from > other.payment_from
+
+    def __ge__(self, other):
+        return self.payment_from >= other.payment_from
+
+    def __lt__(self, other):
+        return self.payment_from < other.payment_from
+
+    def __le__(self, other):
+        return self.payment_from <= other.payment_from
+
+    def __str__(self):
+        pass
 
 
 class Connector:
@@ -160,8 +178,15 @@ class Connector:
             json.dump(vacancies_json, file, indent=4, ensure_ascii=False)
 
     def select(self):
-
         with open(self.filename, "r", encoding="utf-8") as file:
             vacancies = json.load(file)
         return [Vacancy(x) for x in vacancies]
-        pass
+
+    def sort_vacancy(self):
+        vacancies = self.select()
+        return sorted(vacancies)
+
+    def sort_vacancy_payment_to(self):
+        vacancies = self.select()
+        return sorted(vacancies, key=lambda x: x.payment_to)
+
