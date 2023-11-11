@@ -1,12 +1,11 @@
+# импорт библиотек
 import json
 from abc import ABC, abstractmethod
 from datetime import datetime
-
+from config import API_KEY
 from exception import ParsingError
-import os
-# from dotenv import load_dotenv
 import requests
-# load_dotenv()
+
 class Engine(ABC):
     @abstractmethod
     def get_request(self):
@@ -32,46 +31,31 @@ class HeadHunter(Engine):
         response = requests.get(f'{self.url}/vacancies', params=self.params)
         if response.status_code != 200:
             raise ParsingError(f"Ошибка получения вакансий! Статус: {response.status_code}")
-        # print(response.json())
         return response.json()
 
 
     def get_vacancies(self, pages_count=10):
-        '''Проходим циклом по словарю берем из словаря только нужные нам данные и записываем их в переменную "vacancies" '''
+        '''Проходим циклом по словарю  записываем данные в переменную "vacancies" '''
         self.vacancies = [] # очищаем список
         for page in range(pages_count):
             page_vacancies = []
-            # self.params["per_page"] = page
             print(f"({self.__class__.__name__}) Парсинг страницы {page} -", end=" ")
             try:
                 page_vacancies = self.get_request()
-                # print(self.get_request())
-                # print(len(self.vacancies)('items'))
             except ParsingError as error:
                 print(error)
             else:
-                # print(page_vacancies['items'])
-                # print(json.dumps(page_vacancies['items'], indent=2, ensure_ascii=False))
                 self.vacancies.extend(page_vacancies['items'])
-                # print(json.dumps(self.vacancies, indent=2, ensure_ascii=False))
-                # print(f"Загружено вакансий {len(self.vacancies)}")
                 print(f"Загружено вакансий {len(page_vacancies['items'])}")
-                # print(len(self.vacancies))
-                # print(self.vacancies)
-                # print(json.dumps(self.vacancies, indent=2, ensure_ascii=False))
-                # print(page_vacancies)
             if len(page_vacancies) == 0:
                 break
 
     def get_formatted_vacancies(self):
+        '''Проходим циклом по данным, записанным в self.vacancies и берем только нужные нам данные и записываем в formatted_vacancies'''
         formatted_vacancies = []
         for vacancy in self.vacancies:
             published_at = datetime.strptime(vacancy['published_at'], "%Y-%m-%dT%H:%M:%S%z")
-            # print(vacancy)
-            # print(json.dumps(vacancy, indent=2, ensure_ascii=False))
-            # print(f"New")
             formatted_vacancy = {
-                # "ist": "hh.ru",
                 "employer": vacancy['department']['name'] if vacancy.get('department') else None,
                 "title": vacancy['name'],
                 "payment_from": vacancy['salary']['from'] if vacancy.get('salary') else None,
@@ -79,7 +63,6 @@ class HeadHunter(Engine):
                 'responsibility': vacancy['snippet']['responsibility'],
                 'link': vacancy['apply_alternate_url'],
                 'date': published_at.strftime("%d.%m.%Y"),
-
             }
             formatted_vacancies.append(formatted_vacancy)
         return formatted_vacancies
@@ -94,13 +77,13 @@ class SuperJob(Engine):
             "keyword": keyword,
             "archive": False
         }
-
         self.headers = {
-            "X-Api-App-Id": "v3.r.137936779.c561df967b4d14c5d30f8b6e3132e9b7bc52cb7f.e8b0c26ac031c925476eba981ecfa9c3dcd8a66f"
+            "X-Api-App-Id": API_KEY
         }
         self.vacancies = []
 
     def get_request(self):
+        '''Делает запрос по API и возвращает в формате json'''
         response = requests.get(self.url, headers=self.headers, params=self.params)
         if response.status_code != 200:
             raise ParsingError(f"Ошибка получения вакансий! Статус: {response.status_code}")
@@ -108,26 +91,23 @@ class SuperJob(Engine):
 
 
     def get_vacancies(self, pages_count=2):
-
+        '''Проходим циклом по словарю  записываем данные в переменную "vacancies" '''
         self.vacancies = [] # очищаем список
         for page in range(pages_count):
             page_vacancies = []
-            # self.params["page"] = page
             print(f"({self.__class__.__name__}) Парсинг страницы {page} -", end=" ")
             try:
                 page_vacancies = self.get_request()
-                print(json.dumps(page_vacancies, indent=2, ensure_ascii=False))
             except ParsingError as error:
                 print(error)
             else:
                 self.vacancies.extend(page_vacancies)
-
-                print(f"Загружено вакансий {len(self.vacancies)}")
-
+                print(f"Загружено вакансий {len(page_vacancies)}")
             if len(page_vacancies) == 0:
                 break
 
     def get_formatted_vacancies(self):
+        '''Проходим циклом по данным, записанным в self.vacancies и берем только нужные нам данные и записываем в formatted_vacancies'''
         formatted_vacancies = []
         for vacancy in self.vacancies:
             published_at = datetime.fromtimestamp(vacancy.get('date_published', ''))
@@ -145,14 +125,28 @@ class SuperJob(Engine):
 
 class Vacancy:
     def __init__(self, vacancy):
-        self.employer = vacancy.employer
-        self.title = vacancy.title
-        self.payment_from = vacancy.payment_from
-        self.payment_to = vacancy.payment_to
-        self.responsibility = vacancy.responsibility
-        self.link = vacancy.link
-        self.date = vacancy.date
+        self.employer = vacancy["employer"]
+        self.title = vacancy["title"]
+        self.payment_from = vacancy['payment_from'] if vacancy['payment_from'] else 0
+        self.payment_to = vacancy['payment_to'] if vacancy['payment_to'] else 0
+        self.responsibility = vacancy['responsibility']
+        self.link = vacancy['link']
+        self.date = vacancy['date']
 
+    def __str__(self):
+        '''Показывает информацию об объекте класса'''
+        output_str = f"""
+        employer = {self.employer}
+        title = {self.title}
+        payment_from = {self.payment_from}
+        payment_to = {self.payment_to}
+        responsibility = {self.responsibility}
+        link = {self.link}
+        date = {self.date}
+"""
+        return output_str
+
+    # Магические методы для сравнения по payment_from
     def __gt__(self, other):
         return self.payment_from > other.payment_from
 
@@ -165,28 +159,27 @@ class Vacancy:
     def __le__(self, other):
         return self.payment_from <= other.payment_from
 
-    def __str__(self):
-        pass
-
-
 class Connector:
     def __init__(self, keyword):
         self.filename = f"{keyword.title()}.json"
 
     def insert(self, vacancies_json):
+        '''Запись в файл'''
         with open(self.filename, "w", encoding="utf-8") as file:
             json.dump(vacancies_json, file, indent=4, ensure_ascii=False)
 
     def select(self):
+        '''Возвращает список объектов класса Vacancy'''
         with open(self.filename, "r", encoding="utf-8") as file:
             vacancies = json.load(file)
         return [Vacancy(x) for x in vacancies]
 
     def sort_vacancy(self):
+        '''Сортировка при помощи магических методов сравнения по ключу "payment_from" '''
         vacancies = self.select()
         return sorted(vacancies)
 
     def sort_vacancy_payment_to(self):
+        '''Сортировка вакансий по ключу "payment_to" '''
         vacancies = self.select()
         return sorted(vacancies, key=lambda x: x.payment_to)
-
