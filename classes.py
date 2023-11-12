@@ -161,7 +161,7 @@ class Vacancy:
 
 class Connector:
     def __init__(self, keyword):
-        self.filename = f"{keyword.title()}.json"
+        self.filename = f"data/{keyword.lower()}.json"
 
     def insert(self, vacancies_json):
         '''Запись в файл'''
